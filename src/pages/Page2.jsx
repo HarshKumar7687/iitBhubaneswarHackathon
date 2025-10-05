@@ -1,14 +1,10 @@
 // page2.jsx
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import Navbar from '../components/Navbar';
 
 const Page2 = () => {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const animationRef = useRef(null);
-  const requestRef = useRef();
-
   // Stats data
   const carbonData = {
     current: "45,048",
@@ -40,216 +36,68 @@ const Page2 = () => {
     ]
   };
 
-  // Enhanced animation objects with more variety
-  const [animationObjects, setAnimationObjects] = useState([]);
-
-  useEffect(() => {
-    const initialObjects = Array.from({ length: 60 }, (_, i) => ({
-      id: i,
-      size: Math.random() * 60 + 30,
-      color: `hsl(${Math.random() * 360}, 85%, 65%)`,
-      originalX: Math.random() * 85 + 7.5,
-      originalY: Math.random() * 85 + 7.5,
-      currentX: Math.random() * 85 + 7.5,
-      currentY: Math.random() * 85 + 7.5,
-      rotation: Math.random() * 360,
-      shape: ['circle', 'triangle', 'rectangle', 'blob', 'star', 'hexagon'][Math.floor(Math.random() * 6)],
-      speed: Math.random() * 4 + 1,
-      opacity: Math.random() * 0.9 + 0.3,
-      blur: Math.random() * 6 + 1,
-      scale: 1,
-      zIndex: Math.floor(Math.random() * 10),
-    }));
-    setAnimationObjects(initialObjects);
-  }, []);
-
-  const handleMouseMove = (e) => {
-    if (!animationRef.current) return;
-    
-    const rect = animationRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    
-    setMousePosition({ x, y });
-
-    // Enhanced physics with magnetic effect
-    setAnimationObjects(prev => prev.map(obj => {
-      const dx = obj.currentX - x;
-      const dy = obj.currentY - y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      const repulsionStrength = 35;
-      const influenceRadius = 40;
-      const magneticStrength = 15;
-      
-      if (distance < influenceRadius) {
-        // Strong repulsion when close
-        const force = Math.pow((1 - distance / influenceRadius), 2) * repulsionStrength;
-        const angle = Math.atan2(dy, dx);
-        const newX = obj.currentX + Math.cos(angle) * force;
-        const newY = obj.currentY + Math.sin(angle) * force;
-        
-        return {
-          ...obj,
-          currentX: Math.max(1, Math.min(99, newX)),
-          currentY: Math.max(1, Math.min(99, newY)),
-          scale: 1.3,
-          opacity: 1
-        };
-      } else if (distance < influenceRadius * 2) {
-        // Gentle magnetic attraction when further
-        const force = (1 - distance / (influenceRadius * 2)) * magneticStrength * -0.3;
-        const angle = Math.atan2(dy, dx);
-        const newX = obj.currentX + Math.cos(angle) * force;
-        const newY = obj.currentY + Math.sin(angle) * force;
-        
-        return {
-          ...obj,
-          currentX: Math.max(1, Math.min(99, newX)),
-          currentY: Math.max(1, Math.min(99, newY)),
-          scale: 1.1,
-          opacity: Math.min(1, obj.opacity + 0.2)
-        };
-      }
-      
-      // Return to original position
-      const returnSpeed = 0.03;
-      const returnX = obj.currentX + (obj.originalX - obj.currentX) * returnSpeed;
-      const returnY = obj.currentY + (obj.originalY - obj.currentY) * returnSpeed;
-      
-      return {
-        ...obj,
-        currentX: returnX,
-        currentY: returnY,
-        scale: 1,
-        opacity: obj.opacity
-      };
-    }));
-  };
-
-  // Animation loop for continuous movement
-  useEffect(() => {
-    const animate = () => {
-      setAnimationObjects(prev => prev.map(obj => ({
-        ...obj,
-        rotation: obj.rotation + obj.speed * 0.08,
-        // Add subtle floating motion
-        currentX: obj.currentX + Math.sin(Date.now() * 0.001 + obj.id) * 0.05,
-        currentY: obj.currentY + Math.cos(Date.now() * 0.001 + obj.id) * 0.05
-      })));
-      requestRef.current = requestAnimationFrame(animate);
-    };
-
-    requestRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(requestRef.current);
-  }, []);
-
-  const renderObjectShape = (obj) => {
-    const baseStyle = {
-      position: 'absolute',
-      left: `${obj.currentX}%`,
-      top: `${obj.currentY}%`,
-      width: `${obj.size}px`,
-      height: `${obj.size}px`,
-      opacity: obj.opacity,
-      filter: `blur(${obj.blur}px)`,
-      transform: `translate(-50%, -50%) rotate(${obj.rotation}deg) scale(${obj.scale})`,
-      transition: 'all 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-      cursor: 'crosshair',
-      zIndex: obj.zIndex,
-      pointerEvents: 'none',
-    };
-
-    const glowEffect = {
-      boxShadow: `0 0 ${obj.size * 0.8}px ${obj.size * 0.4}px ${obj.color}40,
-                  0 0 ${obj.size * 1.2}px ${obj.size * 0.6}px ${obj.color}20,
-                  inset 0 0 ${obj.size * 0.4}px ${obj.color}30`
-    };
-
-    switch (obj.shape) {
-      case 'circle':
-        return (
-          <div
-            key={obj.id}
-            className="absolute rounded-full"
-            style={{
-              ...baseStyle,
-              ...glowEffect,
-              backgroundColor: obj.color,
-            }}
-          />
-        );
-      case 'triangle':
-        return (
-          <div
-            key={obj.id}
-            className="absolute"
-            style={{
-              ...baseStyle,
-              width: 0,
-              height: 0,
-              backgroundColor: 'transparent',
-              borderLeft: `${obj.size / 2}px solid transparent`,
-              borderRight: `${obj.size / 2}px solid transparent`,
-              borderBottom: `${obj.size}px solid ${obj.color}`,
-              filter: `blur(${obj.blur}px) drop-shadow(0 0 ${obj.size * 0.3}px ${obj.color}50)`
-            }}
-          />
-        );
-      case 'blob':
-        return (
-          <div
-            key={obj.id}
-            className="absolute"
-            style={{
-              ...baseStyle,
-              ...glowEffect,
-              backgroundColor: obj.color,
-              borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%',
-              animation: 'morph 8s ease-in-out infinite'
-            }}
-          />
-        );
-      case 'star':
-        return (
-          <div
-            key={obj.id}
-            className="absolute"
-            style={{
-              ...baseStyle,
-              ...glowEffect,
-              backgroundColor: obj.color,
-              clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
-            }}
-          />
-        );
-      case 'hexagon':
-        return (
-          <div
-            key={obj.id}
-            className="absolute"
-            style={{
-              ...baseStyle,
-              ...glowEffect,
-              backgroundColor: obj.color,
-              clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)'
-            }}
-          />
-        );
-      default: // rectangle
-        return (
-          <div
-            key={obj.id}
-            className="absolute rounded-xl"
-            style={{
-              ...baseStyle,
-              ...glowEffect,
-              backgroundColor: obj.color,
-            }}
-          />
-        );
+  // Features/Services data
+  const features = [
+    {
+      icon: "📊",
+      title: "Advanced Analytics",
+      description: "Real-time carbon footprint tracking and predictive analytics for better decision making.",
+      color: "from-blue-500 to-cyan-500"
+    },
+    {
+      icon: "🌍",
+      title: "Global Compliance",
+      description: "Stay compliant with international environmental regulations and reporting standards.",
+      color: "from-green-500 to-emerald-500"
+    },
+    {
+      icon: "⚡",
+      title: "Energy Optimization",
+      description: "AI-powered recommendations to reduce energy consumption and improve efficiency.",
+      color: "from-purple-500 to-pink-500"
+    },
+    {
+      icon: "📈",
+      title: "Performance Dashboard",
+      description: "Comprehensive visualizations and KPI tracking for sustainability metrics.",
+      color: "from-orange-500 to-red-500"
+    },
+    {
+      icon: "🔒",
+      title: "Data Security",
+      description: "Enterprise-grade security ensuring your environmental data remains protected.",
+      color: "from-indigo-500 to-blue-500"
+    },
+    {
+      icon: "🔄",
+      title: "Automated Reporting",
+      description: "Generate compliance reports and sustainability disclosures with one click.",
+      color: "from-teal-500 to-green-500"
     }
-  };
+  ];
+
+  const services = [
+    {
+      title: "Carbon Accounting",
+      description: "Complete carbon footprint measurement across scope 1, 2, and 3 emissions.",
+      features: ["Real-time tracking", "Automated reporting", "Benchmarking", "Compliance ready"]
+    },
+    {
+      title: "Energy Management",
+      description: "Optimize energy consumption and reduce costs through intelligent monitoring.",
+      features: ["Smart metering", "Peak demand management", "Renewable integration", "Cost analysis"]
+    },
+    {
+      title: "Sustainability Strategy",
+      description: "Develop and implement comprehensive sustainability roadmaps.",
+      features: ["Goal setting", "Stakeholder engagement", "Progress tracking", "Certification support"]
+    },
+    {
+      title: "ESG Reporting",
+      description: "Streamlined environmental, social, and governance reporting framework.",
+      features: ["Framework alignment", "Data collection", "Stakeholder communication", "Audit ready"]
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -361,60 +209,100 @@ const Page2 = () => {
           </div>
         </div>
       </section>
-      
-      {/* Pure Animation Section - Enhanced */}
-      <section 
-        ref={animationRef}
-        className="min-h-screen bg-gradient-to-br from-black via-purple-900/80 to-blue-900/80 relative overflow-hidden cursor-crosshair"
-        onMouseMove={handleMouseMove}
-      >
-        {/* Enhanced animated background */}
-        <div className="absolute inset-0 opacity-15">
-          <div className="absolute top-20 left-20 w-80 h-80 bg-purple-500 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-blue-500 rounded-full blur-3xl animate-pulse delay-700"></div>
-          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-cyan-500 rounded-full blur-3xl animate-pulse delay-300"></div>
+
+      {/* Features Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-800 to-gray-900">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white mb-4">
+              Powerful <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Features</span>
+            </h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              Comprehensive tools and insights to drive your sustainability initiatives forward
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <div 
+                key={index}
+                className="bg-gray-800 rounded-2xl p-6 border border-gray-700 hover:border-gray-600 transition-all duration-300 hover:transform hover:scale-105 group"
+              >
+                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${feature.color} flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-300 leading-relaxed">
+                  {feature.description}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
-        
-        {/* Interactive objects - main highlight */}
-        <div className="absolute inset-0">
-          {animationObjects.map((obj) => renderObjectShape(obj))}
-        </div>
-        
-        {/* Enhanced cursor effect */}
-        <div 
-          className="absolute w-8 h-8 bg-white/20 rounded-full pointer-events-none z-50 backdrop-blur-sm border-2 border-white/30"
-          style={{
-            left: `calc(${mousePosition.x}% - 1rem)`,
-            top: `calc(${mousePosition.y}% - 1rem)`,
-            transition: 'left 0.05s linear, top 0.05s linear',
-            boxShadow: '0 0 20px rgba(255,255,255,0.5)'
-          }}
-        />
-        
-        {/* Ripple effect around cursor */}
-        <div 
-          className="absolute w-16 h-16 bg-white/10 rounded-full pointer-events-none z-40"
-          style={{
-            left: `calc(${mousePosition.x}% - 2rem)`,
-            top: `calc(${mousePosition.y}% - 2rem)`,
-            transition: 'left 0.1s ease-out, top 0.1s ease-out',
-            animation: 'pulse 2s infinite'
-          }}
-        />
       </section>
 
-      <style jsx>{`
-        @keyframes pulse {
-          0% { transform: scale(1); opacity: 0.6; }
-          50% { transform: scale(1.2); opacity: 0.3; }
-          100% { transform: scale(1); opacity: 0.6; }
-        }
-        @keyframes morph {
-          0% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
-          50% { border-radius: 58% 42% 75% 25% / 76% 46% 54% 24%; }
-          100% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
-        }
-      `}</style>
+      {/* Services Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-900">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white mb-4">
+              Our <span className="bg-gradient-to-r from-green-400 to-cyan-400 bg-clip-text text-transparent">Services</span>
+            </h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              End-to-end sustainability solutions tailored to your organization's needs
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {services.map((service, index) => (
+              <div 
+                key={index}
+                className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl p-8 border border-gray-700 hover:border-blue-500 transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10"
+              >
+                <h3 className="text-2xl font-bold text-white mb-4">
+                  {service.title}
+                </h3>
+                <p className="text-gray-300 mb-6 text-lg">
+                  {service.description}
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {service.features.map((feature, featureIndex) => (
+                    <div key={featureIndex} className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                      <span className="text-gray-300 text-sm">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+                <button className="mt-6 bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg transition-all duration-300 font-medium transform hover:scale-105">
+                  Learn More
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-600 to-purple-600">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl font-bold text-white mb-6">
+            Ready to Transform Your Sustainability Journey?
+          </h2>
+          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+            Join thousands of organizations using our platform to drive meaningful environmental impact and business value.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button className="bg-white text-blue-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-2xl">
+              Start Free Trial
+            </button>
+            <button className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-white hover:text-blue-600 transition-all duration-300 transform hover:scale-105">
+              Schedule Demo
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
